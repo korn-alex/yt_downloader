@@ -5,13 +5,13 @@ import datetime
 Handles tracklisting from youtube descriptions
 """
 
+REGSTAMP = re.compile(r'(\d{1,2}:){1,2}\d{1,2}\.?\d*')
 
 def get_tracklist(description:str) -> list:
     """
     returns a list with lines where a timestamp is found
     """
     desc = description.split('\n')
-    
     # in case the first track has no time notation
     # if nr == 0 and stamp == '':
     #     stamp = f'00:00:00'
@@ -22,22 +22,24 @@ def get_tracklist(description:str) -> list:
     # 4:20
     # 14:20
     # 1:14:20
-    regstamp = re.compile(r'\d*:*\d{1,2}:\d\d')
+    # regstamp = re.compile(r'\d*:*\d{1,2}:\d\d')
     relevant_lines = []
     for line in desc:
-        if regstamp.findall(line):
+        if REGSTAMP.search(line):
             relevant_lines.append(line)
     return relevant_lines
 
 def get_timestamp(track:str) -> str:
     """
-    find "0:00:00" timestamp in the track string and returns a timestamp "00:00:00"
+    find "00:00:00" timestamp in the track string and returns a timestamp "00:00:00"
     """
     
     # regstamp = re.compile(r'\d*:*\d{1,2}:\d\d')
-    regstamp = re.compile(r'\d*:*\d{1,2}:\d\d\.?\d*')
+    # regstamp = re.compile(r'(\d{1,2}:)?\d{1,2}:\d{1,2}\.?\d*')
+    # regstamp = re.compile(r'(\d{1,2}:){1,2}\d{1,2}\.?\d*')
     try:
-        stamp = regstamp.findall(track)[0]
+        # stamp = REGSTAMP.search(track)[0]
+        stamp = REGSTAMP.search(track).group()
         if stamp:
             # checking for min, hour and filling missing numbers with zeros
             # making every timestamp the following format: 00:00:00
@@ -48,7 +50,7 @@ def get_timestamp(track:str) -> str:
                 minute, second = stamp.split(':')
                 stamp = f'00:{minute.zfill(2)}:{second.zfill(2)}'
     except:
-        pass
+        raise RuntimeError(f'No timestamp found in "{track}"')
     return stamp
 
 def timestamp_to_seconds(timestamp:str) -> float:
@@ -77,9 +79,9 @@ def get_clean_trackname(track:str) -> str:
     # trackname = ''
     # timestamp = ''
     # track = {'trackname':trackname, 'timestamp':timestamp}
-    regstamp = re.compile(r'\d*:*\d{1,2}:\d\d')
+    # regstamp = re.compile(r'\d*:*\d{1,2}:\d\d')
     # remove the timestamps
-    stamp_str = regstamp.findall(track)[0]
+    stamp_str = REGSTAMP.search(track).group()
     stamp_length = len(stamp_str)
     stamp_start = track.find(stamp_str)
     stamp_end = stamp_start + stamp_length
