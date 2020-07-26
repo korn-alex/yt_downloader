@@ -1,5 +1,7 @@
 import re
 import datetime
+from secrets import token_hex
+
 
 """ 
 Handles tracklisting from youtube descriptions
@@ -70,28 +72,38 @@ def seconds_to_timestamp(seconds:float) -> str:
     return time_delta.strftime('%H:%M:%S.%f')
 
 
-def get_clean_trackname(track:str) -> str:
+def get_clean_trackname(track:str, name=None) -> str:
     """
-    parses track string and returns trackname without timestamp in the name
+    Parses track string and returns trackname without timestamp in the name.
+    
+    `name`: str, default is None.
+    Sets name for track.
     """
-
-    # author = ''
-    # trackname = ''
-    # timestamp = ''
-    # track = {'trackname':trackname, 'timestamp':timestamp}
-    # regstamp = re.compile(r'\d*:*\d{1,2}:\d\d')
-    # remove the timestamps
-    stamp_str = REGSTAMP.search(track).group()
-    stamp_length = len(stamp_str)
-    stamp_start = track.find(stamp_str)
-    stamp_end = stamp_start + stamp_length
-    stampless_str = track[:stamp_start] + track[stamp_end:]
-
-    for ch in [r'(',r')',r'[',r']',r'{',r'}',r'/']:
-        if ch in stampless_str:
-            stampless_str=stampless_str.replace(ch,'')
+    if name:
+        stampless_str = name
+    else:
+        try:
+            stamp_str = REGSTAMP.search(track).group()
+        # random name
+        except AttributeError:
+            raise AttributeError(f'No timestamp found in "{track}"')
+        stamp_length = len(stamp_str)
+        stamp_start = track.find(stamp_str)
+        stamp_end = stamp_start + stamp_length
+        stampless_str = track[:stamp_start] + track[stamp_end:]
+    # re.findall(r'[A-Za-z0-9_\-(){}]')
+    # for ch in [r'(',r')',r'[',r']',r'{',r'}',r'/']:
+    #     if ch in stampless_str:
+    #         stampless_str=stampless_str.replace(ch,'')
     # track = {'trackname':stampless_str, 'timestamp':stamp_str}
-    return stampless_str.strip()
+    _clean = ''.join(re.findall(r'[A-Za-z0-9ÄÖÜäöüß_(){}&\s\-]', stampless_str))
+    _clean_start = re.sub('^[&(){}\s\.]*', '', _clean)
+    _clean_end = re.sub('[&(){}\s\.]*$', '', _clean_start)
+    if not _clean_end:
+        trackname = token_hex(16)
+    else:
+        trackname = _clean_end
+    return trackname
 
 
 def get_track_durations(tracks:list, full_duration:int)->list:
